@@ -1,19 +1,15 @@
-import rest_framework.pagination
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView, \
-    ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.mixins import DestroyModelMixin, UpdateModelMixin, CreateModelMixin
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from .filters import HotelFilter
-from .models import Hotel, Category, Comment
+from .models import Hotel, Category, Comment, Like, Favorite, Cart
 from .permissions import IsAdmin, IsAuthor
-from .serializer import HotelSerializer, HotelsListSerializer, CategorySerializer, CommentSerializer
+from .serializer import HotelSerializer, CategorySerializer, CommentSerializer, \
+    LikeSerializer, FavoritesSerializer, CartSerailizer
 
 
 class HotelViewSet(ModelViewSet):
@@ -24,7 +20,6 @@ class HotelViewSet(ModelViewSet):
     search_fields = ['name', 'price']
     ordering_fields = ['name', 'price']
 
-    # api/v1/products/id/comments
     @action(['GET'], detail=True)
     def comments(self, request, pk):
         hotel = self.get_object()
@@ -39,33 +34,50 @@ class CategoryViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
 
 
-class CreatedCommentView(CreateAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class UpdateCommentView(UpdateAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthor]
-
-
-class DeleteCommentView(DestroyAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthor | IsAdmin]
-
-
-class CreateModelMixin:
-    pass
-
-
-class CommentViewSet(CreateModelMixin, UpdateModelMixin, DestroyModelMixin, GenericViewSet):
+class CommentViewSet(ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
     def get_permissions(self):
         if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'retrieve':
+            return [AllowAny()]
+        else:
+            return [IsAuthor()]
+
+
+class LikeViewSet(ModelViewSet):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'list':
+            return [IsAuthenticated()]
+        return [IsAuthor()]
+
+
+class FavoritesViewSet(ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoritesSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'list':
+            return [IsAuthenticated()]
+        return [IsAuthor()]
+
+
+class CartViewSet(ModelViewSet):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerailizer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'list':
             return [IsAuthenticated()]
         return [IsAuthor()]
