@@ -1,16 +1,16 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 
 from .filters import HotelFilter
 from .models import Hotel, Category, Comment, Like, Favorite, Cart
 from .permissions import IsAdmin, IsAuthor
-from .serializer import HotelSerializer, CategorySerializer, CommentSerializer, \
-    LikeSerializer, FavoritesSerializer, CartSerailizer
-
+from .serializer import HotelSerializer, HotelsListSerializer, CategorySerializer, CommentSerializer, \
+    LikeSerializer, CartSerailizer, FavoritesSerializer
 
 class HotelViewSet(ModelViewSet):
     queryset = Hotel.objects.all()
@@ -19,6 +19,12 @@ class HotelViewSet(ModelViewSet):
     filterset_class = HotelFilter
     search_fields = ['name', 'price']
     ordering_fields = ['name', 'price']
+
+    def get_serializer_class(self):
+        serializer_class = super().get_serializer_class()
+        if self.action == 'list':
+            serializer_class = HotelsListSerializer
+        return serializer_class
 
     @action(['GET'], detail=True)
     def comments(self, request, pk):
@@ -34,16 +40,17 @@ class CategoryViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
 
 
-class CommentViewSet(ModelViewSet):
+class CommentViewSet(CreateModelMixin,
+                     UpdateModelMixin,
+                     DestroyModelMixin,
+                     GenericViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
     def get_permissions(self):
         if self.action == 'create':
             return [IsAuthenticated()]
-        if self.action == 'retrieve':
-            return [AllowAny()]
-        else:
+        elif self.action in ['update', 'partial_update', 'destroy']:
             return [IsAuthor()]
 
 

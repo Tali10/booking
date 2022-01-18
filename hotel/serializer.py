@@ -8,7 +8,7 @@ User = get_user_model()
 class HotelsListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
-        fields = ('id', 'name', 'price')
+        fields = '__all__'
 
 
 class HotelSerializer(serializers.ModelSerializer):
@@ -24,19 +24,16 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all(), write_only=True)
+
     class Meta:
         model = Comment
-        fields = ['hotel', 'text', 'rating']
+        exclude = ['user']
 
-        def validate_rating(self, rating):
-            if rating not in range (1, 6):
-                raise serializers.ValidationError('Рейтинг должен быть от 1 до 5')
-            return rating
-
-        def create(self, validated_data):
-            user = self.context['request'].user
-            validated_data['author'] = user
-            return super().create(validated_data)
+    def create(self, validated_data):
+        user = self.context.get('request').user
+        validated_data['user'] = user
+        return super().create(validated_data)
 
 
 class LikeSerializer(serializers.ModelSerializer):

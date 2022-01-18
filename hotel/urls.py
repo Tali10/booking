@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
 
-from .views import HotelViewSet, CategoryViewSet, CommentViewSet, LikeViewSet, FavoritesViewSet, CartViewSet
+from .views import HotelViewSet, CategoryViewSet, CommentViewSet, LikeViewSet, CartViewSet, FavoritesViewSet
 
 router = SimpleRouter()
 router.register('hotel', HotelViewSet)
