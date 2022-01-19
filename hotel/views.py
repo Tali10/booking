@@ -26,6 +26,16 @@ class HotelViewSet(ModelViewSet):
             serializer_class = HotelsListSerializer
         return serializer_class
 
+    def get_permissions(self):
+        #создавать пост может залогиненный пользователь
+        if self.action in ['create', 'add_to_favorites', 'remove_from_favorites']:
+            return [IsAuthenticated()]
+        # изменять и удалять только автор
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAuthor()]
+        # просматривать могут все
+        return []
+
     @action(['GET'], detail=True)
     def comments(self, request, pk):
         hotel = self.get_object()
